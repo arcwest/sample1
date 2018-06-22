@@ -1,0 +1,11 @@
+.metadata
+*.o
+*.d
+*.zip
+Debug
+Release
+Scripts/TestScript/Out/TC
+~$*.xlsx
+src/generalScripts/FileCreation/out
+.jxbrowser-data
+*.pyc
