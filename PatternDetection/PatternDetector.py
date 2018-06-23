@@ -46,7 +46,7 @@ class HorizontalDetectorNode:
         diff = abs(self.Range[1] - self.Range[0])
             
         if(self.ChildNode == None):
-            if(val - self.Range[0] > self.horizontalboundaryPercent*diff or self.Range[1] - val > self.horizontalboundaryPercent*diff ):
+            if(val - self.Range[0] > self.G.horizontalboundaryPercent*diff or self.Range[1] - val > self.G.horizontalboundaryPercent*diff ):
                 self.formchild()
         
         if(self.ChildNode):
@@ -61,7 +61,9 @@ class HorizontalDetectorNode:
         midpoint = (self.Range[1] + self.Range[0]) / 2
         if(self.level < self.G.maxhorizontaldepth - 1):
             self.ChildNode = [HorizontalDetectorNode(self.Range[0], midpoint, self.vertlevel, self.level + 1), HorizontalDetectorNode(midpoint, self.Range[1], self.vertlevel, self.level + 1)]
-        
+            self.ChildNode[0].setmarker(self.markerfunc)
+            self.ChildNode[1].setmarker(self.markerfunc)
+            
     def mark(self,obj):
         if(self.markerfunc):
             self.markerfunc(obj)
@@ -110,6 +112,8 @@ class VerticalDetectorNode:
             
             if(self.ChildNode == None):
                 self.ChildNode = [VerticalDetectorNode(self.level + 1),VerticalDetectorNode(self.level + 1)]
+                self.ChildNode[0].setmarker(self.markerfunc)
+                self.ChildNode[1].setmarker(self.markerfunc)
             
             # Apply hpf (pi/2) and lpf (pi/2) before downsampling the input by 2
             self.ChildNode[0].input((self.lastinput + inp) / 2) #LPF 
@@ -119,6 +123,7 @@ class VerticalDetectorNode:
     def InsertHnode(self, inp):
         if(self.Hnode == None):
             self.Hnode = HorizontalDetectorNode(self.G.minval, self.G.maxval, self.level, 0)
+            self.Hnode.setmarker(self.markerfunc)
             
         
         self.Hnode.input(inp)

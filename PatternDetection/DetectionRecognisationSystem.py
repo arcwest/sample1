@@ -51,33 +51,36 @@ class DetectionRecognisationSystem(object):
         self.PDR.input(inp)
         # form the detected object tree for this match
         ddo = self.PD.formDDO()
-        outlist = []
-        
-        # run over the excited releality speculator trees
-        for rs in self.RSTray:
-            # calculate match percent for each tree
-            outlist += [[rs.calculateMatchPercent(),rs]]
-            # reset the tree for next detection
-            rs.reset()
-            
-        # sort the list to have the rs tree in descending order of importance
-        sorted(outlist, key=itemgetter(0), reverse = True)
-        
-        # insert the current ddo which is also a reality speculator
-        outlist.insert(0, ddo)
-        
-        # truncate the reality speculator outlist to desired amount 
-        if(len(outlist) > self.G.maxlengthofrealityspeculatortobeprocessed):
-            outlist = outlist[0:self.G.maxlengthofrealityspeculatortobeprocessed]
-            
-        # find the reality information from this list
-        outlist = self.findreality(outlist)
+        outlist = [[],[]]
+        if(len(ddo)):
+            # run over the excited releality speculator trees
+            if(len(self.RSTray)):
+                for rs in self.RSTray:
+                    # calculate match percent for each tree
+                    outlist += [[rs.calculateMatchPercent(),rs]]
+                    # reset the tree for next detection
+                    rs.reset()
+                    
+                # sort the list to have the rs tree in descending order of importance
+                sorted(outlist, key=itemgetter(0), reverse = True)
+                
+                # insert the current ddo which is also a reality speculator
+                
+                outlist.insert(0, ddo)
+                
+                # truncate the reality speculator outlist to desired amount 
+                if(len(outlist) > self.G.maxlengthofrealityspeculatortobeprocessed):
+                    outlist = outlist[0:self.G.maxlengthofrealityspeculatortobeprocessed]
+                    
+                # find the reality information from this list
+                if(len(outlist)):
+                    outlist = self.findreality(outlist)
         
         return(outlist)
     
     def findreality(self, ddomatchlist):
         rnlist = {}
-        for el in self.ddomatchlist:
+        for el in ddomatchlist:
             mp = el[0]
             ddo = el[1]
             

@@ -20,3 +20,14 @@ class GlobalConfig(metaclass=Singleton):
     maxmatchlength = 8
     matchadaptationfactor = 0.1
     maxlengthofrealityspeculatortobeprocessed = 16
+    
+    def printself(self):
+        print('minval',self.minval)
+        print('maxval',self.maxval)
+        print('horizontalboundaryPercent',self.horizontalboundaryPercent)
+        print('maxhorizontaldepth',self.maxhorizontaldepth)
+        print('noisefloor',self.noisefloor)
+        print('maxmatchlength',self.maxmatchlength)
+        print('matchadaptationfactor',self.matchadaptationfactor)
+        print('maxlengthofrealityspeculatortobeprocessed',self.maxlengthofrealityspeculatortobeprocessed)
+        

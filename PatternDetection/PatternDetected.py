@@ -13,23 +13,23 @@ class PatternDetected(object):
     '''
 
     class PatNode:
-        def __init__(self, vertlevel, horlevel, range, P):
+        def __init__(self, vertlevel, horlevel, range1, P):
             self.vertlevel = vertlevel
             self.horlevel = horlevel
-            self.range = range
+            self.range = range1
             self.netmatchsuccesscount = 0
-            intval = math.ceil(abs(range[1]))
+            intval = math.ceil(abs(range1[1]))
             self.P = P
             self.node = None
             if(intval == 0):
                 self.intensity = 0
             else:
-                self.intensity = math.log10(math.ceil(abs(range[1])))
+                self.intensity = math.log10(math.ceil(abs(range1[1])))
             
             self.emp = self.calemphasis()
             
         def calemphasis(self):
-            return((2** self.vertical)*(1 + self.horlevel)*self.intensity)
+            return((2** self.vertlevel)*(1 + self.horlevel)*self.intensity)
 
         def excite(self):
             self.P.add2tray(self)
