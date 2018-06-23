@@ -27,6 +27,7 @@ class PatternDetected(object):
                 self.intensity = math.log10(math.ceil(abs(range1[1])))
             
             self.emp = self.calemphasis()
+            GlobalConfig().maxpatobjectscreated += 1
             
         def calemphasis(self):
             return((2** self.vertlevel)*(1 + self.horlevel)*self.intensity)
@@ -37,7 +38,7 @@ class PatternDetected(object):
         '''
         Constructor
         '''
-        self.nodelist = []
+        
         self.RealityNodelist = {}
         self.netmatchcount = 0
         self.DDO = []
@@ -46,53 +47,59 @@ class PatternDetected(object):
         self.marked = 0
         self.P = P
         self.emp = 0
-        
-        
+        self.G = GlobalConfig()
+        self.netpatemp = 0
   
 
     def AddRealityNode(self,R):
         self.RealityNodelist.update({R:0})
     
-    def AddNode(self,node):
-        self.nodelist += [node]
+    
         
         
-    def formDDO(self):
+    def formDDO(self, nodelist):
         patlist = []
-        netemp = 0
-        for el in self.nodelist:
+        for el in nodelist:
             pat = self.formpatnode(el)
             if(pat):
                 patlist += [pat]
-                netemp += pat.emp
+                
                 
                 
         # sort
-        sorted(patlist, key=attrgetter('emp'), reverse = True)
-        self.netemp = netemp
+        patlist = sorted(patlist, key=attrgetter('emp'), reverse = True)
+        
+        # reduce the patlist
+        if(len(patlist) > self.G.maxpatnodeperddo):
+            patlist = patlist[0:self.G.maxpatnodeperddo]
+            
+        self.netpatemp = 0    
+        for el in patlist:
+            self.netpatemp += el.emp
+            # link the pat to node for excitation
+            el.node.addrspatnode(el)
+                
         self.DDO = patlist
-        return(patlist)
+        
     
-    def clearNodelist(self):
-        self.nodelist = [] 
         
     def formpatnode(self,node):
         pat = None
         if(node.vert == 0): #horizontal nodes
             pat = self.PatNode(node.vertlevel, node.level, node.Range, self)
-            node.addrspatnode(pat)
+            #node.addrspatnode(pat)
             pat.node = node
         return(pat)
     
     def reset(self):
         self.tray = []
         self.marked = 0
-        self.clearNodelist()
+        
         
     def add2tray(self,pat):
         self.tray += [pat]
         if(not self.marked):
-            self.P.add2RsTray(self)
+            self.P.P.add2RsTray(self)
             self.marked = 1
     
     def calculateMatchPercent(self):
@@ -100,12 +107,33 @@ class PatternDetected(object):
         for el in self.tray:
             empn += el.emp
          
-        matchpercent = empn/self.netemp
+        matchpercent = empn/self.netpatemp
         if(self.marked == 1):
             self.emp += matchpercent
             self.marked = 2
             
         return(matchpercent)
+    
+    def printddo(self):
+        for el in self.DDO:
+            print('VL: ',el.vertlevel, 'HL: ',el.horlevel, 'R:', el.range, 'emp: ', el.emp)
+    
+class PatternClassifier:
+    
+    def __init__(self,P):
+        self.nodelist = {}
+        self.P = P
    
-
+    def AddNode(self,node):
+        self.nodelist.update({node:0})
+        
+    def clearNodelist(self):
+        self.nodelist = [] 
+        
+    def formDDO(self):
+        DDO = PatternDetected([], self)
+        DDO.formDDO(list(self.nodelist.keys()))
+        self.clearNodelist()
+        return(DDO)
+        
           

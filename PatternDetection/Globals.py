@@ -16,10 +16,28 @@ class GlobalConfig(metaclass=Singleton):
     maxval = 100
     horizontalboundaryPercent = 0.25
     maxhorizontaldepth = 8
-    noisefloor = 10
+    maxvertdepth = 8
+    noisefloor = 500
     maxmatchlength = 8
     matchadaptationfactor = 0.1
     maxlengthofrealityspeculatortobeprocessed = 16
+    maxpatnodeperddo = 128
+    maxpatobjectscreated = 0
+    maxvertnodeobjectcreated = 0
+    maxhornodeobjectcreated = 0
+    maxpatnodepernode = 64
+    maxpatnodeovershoot = 128
+    minemptoprocessDDO = 100
+    printenable = 1
+    logfunc = None
+    count = 0
+    def log(self,s):
+        self.logfunc(str(self.count) + ' :')
+        self.logfunc(s)
+        self.logfunc('\n')
+        if(self.printenable):
+            print(s)
+        self.count += 1
     
     def printself(self):
         print('minval',self.minval)
@@ -30,4 +48,7 @@ class GlobalConfig(metaclass=Singleton):
         print('maxmatchlength',self.maxmatchlength)
         print('matchadaptationfactor',self.matchadaptationfactor)
         print('maxlengthofrealityspeculatortobeprocessed',self.maxlengthofrealityspeculatortobeprocessed)
+        print('maxpatobjectscreated',self.maxpatobjectscreated)
+        print('maxvertnodeobjectcreated',self.maxvertnodeobjectcreated)
+        print('maxhornodeobjectcreated',self.maxhornodeobjectcreated)
         

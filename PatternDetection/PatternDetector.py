@@ -23,7 +23,9 @@ class HorizontalDetectorNode:
         self.vertlevel = vertlevel
         self.vert = 0
         self.RealitySpecList = []
-        self.patdict = {}
+        self.patlist = []
+        
+        self.G.maxhornodeobjectcreated += 1
         
     def AddRealitySpec(self,RS):
         self.RealitySpecList += [RS]
@@ -36,6 +38,7 @@ class HorizontalDetectorNode:
         if(self.isinrange(val)):    
             self.mark(self)
             self.adjust(val)
+            self.excite()
             
         
     def isinrange(self,val):
@@ -46,8 +49,8 @@ class HorizontalDetectorNode:
         diff = abs(self.Range[1] - self.Range[0])
             
         if(self.ChildNode == None):
-            if(val - self.Range[0] > self.G.horizontalboundaryPercent*diff or self.Range[1] - val > self.G.horizontalboundaryPercent*diff ):
-                self.formchild()
+#             if(val - self.Range[0] > self.G.horizontalboundaryPercent*diff or self.Range[1] - val > self.G.horizontalboundaryPercent*diff ):
+            self.formchild()
         
         if(self.ChildNode):
             self.ChildNode[0].input(val)
@@ -69,11 +72,16 @@ class HorizontalDetectorNode:
             self.markerfunc(obj)
             
     def addrspatnode(self, rspat):
-        self.patdict.update({rspat:0})
+        if(len(self.patlist) > self.G.maxpatnodeovershoot):
+            self.patlist = sorted(self.patlist, key= lambda x: x.P.emp, reverse = True)
+            self.patlist = self.patlist[0:self.G.maxpatnodepernode]
+            
+        self.patlist += [rspat]
+        
         
             
     def excite(self):
-        for el in self.patdict:
+        for el in self.patlist:
             el.excite()
         
 
@@ -87,6 +95,7 @@ class VerticalDetectorNode:
         self.G = GlobalConfig()
         self.level = level
         self.vert = 1
+        self.G.maxvertnodeobjectcreated += 1
         
     def setmarker(self,func):
         self.markerfunc = func
@@ -108,7 +117,7 @@ class VerticalDetectorNode:
         
         self.downsampleflag = (self.downsampleflag + 1) % 2;
         
-        if(self.downsampleflag and IsTimeAvailable()):
+        if(self.downsampleflag and IsTimeAvailable() and self.level < self.G.maxvertdepth):
             
             if(self.ChildNode == None):
                 self.ChildNode = [VerticalDetectorNode(self.level + 1),VerticalDetectorNode(self.level + 1)]
