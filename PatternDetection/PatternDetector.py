@@ -4,6 +4,7 @@ Created on 22 Jun 2018
 @author: atind
 '''
 from cgi import valid_boundary
+from Globals import GlobalConfig
 
 def IsTimeAvailable():
     return(True)
@@ -12,12 +13,20 @@ def IsTimeAvailable():
 
 class HorizontalDetectorNode:
     
-    def __init__(self, minval, maxval, horizontalboundaryPercent = 0.25):
+    def __init__(self, minval, maxval, vertlevel, level):
         self.ChildNode = None
         self.Range = [0,0]
-        self.horizontalboundaryPercent = horizontalboundaryPercent
+        self.G = GlobalConfig()
         self.formRange(minval, maxval)
         self.markerfunc = None
+        self.level = level
+        self.vertlevel = vertlevel
+        self.vert = 0
+        self.RealitySpecList = []
+        self.patdict = {}
+        
+    def AddRealitySpec(self,RS):
+        self.RealitySpecList += [RS]
         
     def setmarker(self,func):
         self.markerfunc = func
@@ -30,7 +39,7 @@ class HorizontalDetectorNode:
             
         
     def isinrange(self,val):
-        return(val > self.Range[0] and val < self.Range[1])
+        return(val > self.Range[0] and val < self.Range[1] and abs(val) > self.G.noisefloor)
     
     def adjust(self,val):
         
@@ -40,31 +49,42 @@ class HorizontalDetectorNode:
             if(val - self.Range[0] > self.horizontalboundaryPercent*diff or self.Range[1] - val > self.horizontalboundaryPercent*diff ):
                 self.formchild()
         
-        self.ChildNode[0].input(val)
-        self.ChildNode[1].input(val)
+        if(self.ChildNode):
+            self.ChildNode[0].input(val)
+            self.ChildNode[1].input(val)
         
             
     def formRange(self,leftval, rightval):
         self.Range = [leftval, rightval]
         
     def formchild(self):
-        self.ChildNode = [HorizontalDetectorNode(self.horizontalboundaryPercent), HorizontalDetectorNode(self.horizontalboundaryPercent)]
+        midpoint = (self.Range[1] + self.Range[0]) / 2
+        if(self.level < self.G.maxhorizontaldepth - 1):
+            self.ChildNode = [HorizontalDetectorNode(self.Range[0], midpoint, self.vertlevel, self.level + 1), HorizontalDetectorNode(midpoint, self.Range[1], self.vertlevel, self.level + 1)]
         
-    def mark(self,object):
+    def mark(self,obj):
         if(self.markerfunc):
-            self.markerfunc(object)
+            self.markerfunc(obj)
+            
+    def addrspatnode(self, rspat):
+        self.patdict.update({rspat:0})
+        
+            
+    def excite(self):
+        for el in self.patdict:
+            el.excite()
         
 
 class VerticalDetectorNode:
     
-    def __init__(self, minval, maxval, horizontalboundaryPercent = 0.25):
+    def __init__(self, level):
         self.Hnode = None
-        self.ChildNode = [None, None]
+        self.ChildNode = None
         self.lastinput = 0
         self.downsampleflag = 1
-        self.minval = minval
-        self.maxval = maxval
-        self.horizontalboundaryPercent = horizontalboundaryPercent
+        self.G = GlobalConfig()
+        self.level = level
+        self.vert = 1
         
     def setmarker(self,func):
         self.markerfunc = func
@@ -88,23 +108,25 @@ class VerticalDetectorNode:
         
         if(self.downsampleflag and IsTimeAvailable()):
             
-            if(self.ChildNode[0] == None):
-                self.ChildNode = [VerticalDetectorNode(),VerticalDetectorNode()]
+            if(self.ChildNode == None):
+                self.ChildNode = [VerticalDetectorNode(self.level + 1),VerticalDetectorNode(self.level + 1)]
             
+            # Apply hpf (pi/2) and lpf (pi/2) before downsampling the input by 2
             self.ChildNode[0].input((self.lastinput + inp) / 2) #LPF 
             
             self.ChildNode[1].input((inp - self.lastinput) / 2) #HPF 
             
     def InsertHnode(self, inp):
         if(self.Hnode == None):
-            self.Hnode = HorizontalDetectorNode(self.minval, self.maxval, self.horizontalboundaryPercent)
+            self.Hnode = HorizontalDetectorNode(self.G.minval, self.G.maxval, self.level, 0)
             
         
         self.Hnode.input(inp)
         
-    def mark(self,object):
-        if(self.markerfunc):
-            self.markerfunc(object)
+    def mark(self,obj):
+        pass
+#         if(self.markerfunc):
+#             self.markerfunc(obj)
         
             
         
@@ -115,12 +137,12 @@ class PatternDetector(object):
     '''
 
 
-    def __init__(self, minval, maxval, markerfunc,  horizontalboundaryPercent = 0.25):
+    def __init__(self, markerfunc):
         '''
         Constructor
         '''
         self.markerfunc = markerfunc
-        self.Vnode = VerticalDetectorNode(minval, maxval, horizontalboundaryPercent = 0.25)
+        self.Vnode = VerticalDetectorNode(0)
         self.Vnode.setmarker(self.markerfunc)
         
     def input(self,val):
