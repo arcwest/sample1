@@ -32,6 +32,7 @@ class GlobalConfig(metaclass=Singleton):
     minNetPatEmpToBeConsideredForBeingRS = 1000 # increase to reduce computation but it leads more to uniqueness detection
     minNumOfPatNodeForToBeConsideredForBeingRs = 36
     logfunc = None
+    division = 128
     count = 0
     def log(self,s, enable):
         if(enable):

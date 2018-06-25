@@ -13,19 +13,22 @@ def IsTimeAvailable():
 
 class HorizontalDetectorNode:
     
-    def __init__(self, minval, maxval, vertlevel, level, dir , dirv):
+    def __init__(self, vertlevel, dir , dirv):
         self.ChildNode = None
-        self.Range = [0,0]
         self.G = GlobalConfig()
-        self.formRange(minval, maxval)
+        self.min = self.G.minval
+        self.max = self.G.maxval
+        self.div = self.G.division
         self.markerfunc = None
-        self.level = level
         self.vertlevel = vertlevel
         self.vert = 0
         self.RealitySpecList = []
         self.patlist = []
         self.id = dir
         self.idv = dirv
+        self.val = 0
+        self.slotnum = 0
+        
         
         self.G.maxhornodeobjectcreated += 1
         
@@ -37,41 +40,20 @@ class HorizontalDetectorNode:
         
     def input(self,val):
       
-        if(self.isinrange(val)):    
-            self.mark(self)
-            self.adjust(val)
-            self.excite()
-            
+           
+        self.mark(self)
+        self.adjust(val)
+        self.excite()
+        
         
     def isinrange(self,val):
         return(val > self.Range[0] and val < self.Range[1] and abs(val) > self.G.noisefloor)
     
     def adjust(self,val):
         
-        diff = abs(self.Range[1] - self.Range[0])
-            
-        if(self.ChildNode == None):
-#             if(val - self.Range[0] > self.G.horizontalboundaryPercent*diff or self.Range[1] - val > self.G.horizontalboundaryPercent*diff ):
-            self.formchild()
+        self.val = val
+        self.slotnum = ((val - self.min)*self.div)/(self.max - self.min)
         
-        
-        if(self.ChildNode):
-            if(self.ChildNode[0].isinrange(val) and self.ChildNode[1].isinrange(val)):
-                print(val)
-            self.ChildNode[0].input(val)
-            self.ChildNode[1].input(val)
-        
-            
-    def formRange(self,leftval, rightval):
-        self.Range = [leftval, rightval]
-        
-    def formchild(self):
-        midpoint = (self.Range[1] + self.Range[0]) / 2
-        if(self.level < self.G.maxhorizontaldepth - 1):
-            self.ChildNode = [HorizontalDetectorNode(self.Range[0], midpoint, self.vertlevel, self.level + 1, self.id+'L', self.idv), HorizontalDetectorNode(midpoint, self.Range[1], self.vertlevel, self.level + 1, self.id + 'R', self.idv)]
-            self.ChildNode[0].setmarker(self.markerfunc)
-            self.ChildNode[1].setmarker(self.markerfunc)
-            
     def mark(self,obj):
         if(self.markerfunc):
             self.markerfunc(obj)
