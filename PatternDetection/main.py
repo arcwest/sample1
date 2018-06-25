@@ -11,7 +11,7 @@ from DetectionRecognisationSystem import DetectionRecognisationSystem
 from Globals import GlobalConfig
 CHUNK = 1024
 import time
-
+import math
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -40,11 +40,13 @@ frames = []
 #     print(testdata)
 #     frames.append(data)
 
+
 print("* done recording")
 maxddoforlearning = 16
-GlobalConfig().maxval = 32767
-GlobalConfig().minval = -32768
-GlobalConfig().noisefloor = 50
+maxhitforreality = 16
+GlobalConfig().maxval = (32767)
+GlobalConfig().minval = (-32767)
+GlobalConfig().noisefloor = (500)
 GlobalConfig().printself()
 GlobalConfig().printenable = 0
 # while(1):
@@ -83,20 +85,40 @@ while(1):
     print('record stop')
     stream.stop_stream()
     learnlist = {}
+    curddolist = []
+    netrealitylist = []
     for i in range(0,len(data),2):
+        
+        
         starttime = time.time()
+        #indata = math.log10(1 + abs(struct.unpack('<h',data[i:i + 2])[0]))
         indata = struct.unpack('<h',data[i:i + 2])[0]
-        realitylist, ddolist = DR.input(indata)
+        #print(indata)
+        out = DR.input(indata)
+        realitylist = out[0][0]
+        ddolist = out[0][1]
+        if(out[1]):
+            curddolist += [out[1]]
         #print('t:',time.time() - starttime)
-        DR.printinfo(realitylist)
+        netrealitylist += realitylist
+        
         
         for el in ddolist:
             learnlist.update({el[1]:el})
      
     learnlistfinal = list(learnlist.values())
-    learnlistfinal = sorted(learnlistfinal, key = lambda x:x[1].netpatemp, reverse = True)[0:maxddoforlearning]
+    learnlistfinal = sorted(learnlistfinal, key = lambda x:x[0], reverse = True)[0:maxddoforlearning]#by match percent
+    curddolist = sorted(curddolist, key = lambda x:x.netpatemp, reverse = True)[0:maxddoforlearning]#by highest reach
+    
+    netrealitylist = sorted(netrealitylist, key = lambda x:x[1], reverse = True)[0:maxhitforreality]#by highest reach
+    DR.printinfo(netrealitylist)
+    
     for el in learnlistfinal:
-        print('Netpatemp', el[1].netpatemp, ' match%: ', el[0])
+        print('patlen: ', len(el[1].DDO),'Netpatemp', el[1].netpatemp, ' match%: ', el[0])
+        
+    for el in curddolist:
+        learnlistfinal += [[1,el]]
+        print('patlen: ', len(el.DDO), 'ddo net patemp', el.netpatemp)
         
     
 #     print(learnlistfinal)

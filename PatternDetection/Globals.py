@@ -20,24 +20,27 @@ class GlobalConfig(metaclass=Singleton):
     noisefloor = 500
     maxmatchlength = 8
     matchadaptationfactor = 0.1
-    maxlengthofrealityspeculatortobeprocessed = 16
-    maxpatnodeperddo = 128
+    maxlengthofrealityspeculatortobeprocessed = 32 #total number of RS actually considered for finding reality
+    maxpatnodeperddo = 128 #max number of pat nodes to be used to define a RS or ddo. Note high emp once are selected first. increase this
+                           #number to wider tree detection
     maxpatobjectscreated = 0
     maxvertnodeobjectcreated = 0
     maxhornodeobjectcreated = 0
-    maxpatnodepernode = 64
-    maxpatnodeovershoot = 128
-    minemptoprocessDDO = 100
+    maxpatnodepernode = 64 #max number of pattern nodes for each detection nodes
+    maxpatnodeovershoot = 128 #once this number exceeds the node trims pat nodes to this maxpatnodepernode
     printenable = 1
+    minNetPatEmpToBeConsideredForBeingRS = 1000 # increase to reduce computation but it leads more to uniqueness detection
+    minNumOfPatNodeForToBeConsideredForBeingRs = 36
     logfunc = None
     count = 0
-    def log(self,s):
-        self.logfunc(str(self.count) + ' :')
-        self.logfunc(s)
-        self.logfunc('\n')
-        if(self.printenable):
-            print(s)
-        self.count += 1
+    def log(self,s, enable):
+        if(enable):
+            self.logfunc(str(self.count) + ' :')
+            self.logfunc(s)
+            self.logfunc('\n')
+            if(self.printenable):
+                print(s)
+            self.count += 1
     
     def printself(self):
         print('minval',self.minval)

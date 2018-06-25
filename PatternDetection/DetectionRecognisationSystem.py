@@ -17,7 +17,7 @@ class DetectionRecognisationSystem(object):
     class RealitySpeculator:
         
         def __init__(self, percent, reality, matchfunc):
-            self.percent = percent
+            self.strength = percent
             self.reality = reality
             self.matchfunc = matchfunc
             self.point = 0
@@ -38,6 +38,7 @@ class DetectionRecognisationSystem(object):
         self.RSTray = {}
         self.reset()
         self.RS = {}
+        self.max = 0
         
     def reset(self):
         self.RSTray = {}
@@ -47,6 +48,9 @@ class DetectionRecognisationSystem(object):
         
         
     def input(self,inp):
+        ### find the max
+        if(self.max < inp):
+            self.max = inp
         # reset to clear earlier detection
         self.reset()
         # insert the input to run the detection stage
@@ -57,26 +61,35 @@ class DetectionRecognisationSystem(object):
         self.RS.update({ddo:0})
         outlist = []
 
-        self.G.log('inp: '+str(inp)+'  ddo patemp: '+str(ddo.netpatemp))
-        if(len(ddo.DDO) and ddo.netpatemp > self.G.minemptoprocessDDO):
+        self.G.log('inp: '+str(inp)+'  ddo patemp: '+str(ddo.netpatemp),0)
+        if(len(ddo.DDO) > self.G.minNumOfPatNodeForToBeConsideredForBeingRs):
             # run over the excited releality speculator trees
             if(len(self.RSTray)):
+                
+                self.G.log('Total RS Found: '+str(len(self.RSTray)),1)
+                # sort the rs as per there netpatemp
+                self.RSTray = sorted(self.RSTray, key=lambda x:len(x.DDO), reverse = True)
+                
+                # truncate the reality speculator outlist to desired amount 
+                if(len(self.RSTray) > self.G.maxlengthofrealityspeculatortobeprocessed):
+                    self.RSTray = self.RSTray[0:self.G.maxlengthofrealityspeculatortobeprocessed]
+                
+                self.G.log('Total RS remained: '+str(len(self.RSTray)),1)
+                
+                # find best match
                 for rs in self.RSTray:
-                    # calculate match percent for each tree
+                    # calculate match strength for each tree
                     outlist += [[rs.calculateMatchPercent(),rs]]
+                    self.G.log('RS: netpatemp: '+str( rs.netpatemp)+ 'NumPat: '+str(len(rs.DDO))+'match%: '+str(rs.calculateMatchPercent()),1)
                     # reset the tree for next detection
                     rs.reset()
                     
-                # sort the list to have the rs tree in descending order of importance
-                outlist = sorted(outlist, key=itemgetter(0), reverse = True)
                 
                 # insert the current ddo which is also a reality speculator
                 
-                outlist.insert(0, [1,ddo])
+#                 outlist.insert(0, [1,ddo])
+                self.G.log('RS ddo: netpatemp: '+str( ddo.netpatemp)+ 'NumPat: '+str(len(rs.DDO))+'match%: '+str(ddo.calculateMatchPercent()),1)
                 
-                # truncate the reality speculator outlist to desired amount 
-                if(len(outlist) > self.G.maxlengthofrealityspeculatortobeprocessed):
-                    outlist = outlist[0:self.G.maxlengthofrealityspeculatortobeprocessed]
                     
                 # find the reality information from this list
                 if(len(outlist)):
@@ -84,7 +97,11 @@ class DetectionRecognisationSystem(object):
                 
         if(len(outlist) < 2):
             outlist = [[],[]]
-        return(outlist)
+            ddo = None
+            
+        #print('max', self.max)
+        self.max = 0
+        return(outlist,ddo)
     
     def findreality(self, ddomatchlist):
         rnlist = {}
@@ -98,11 +115,11 @@ class DetectionRecognisationSystem(object):
             
             for rsnode in ddo.RealityNodelist:
                 try:
-                    rnlist[rsnode.reality]+= mp*rsnode.percent*math.log10(ddo.netpatemp)
-                    print(ddo.printddo())
+                    rnlist[rsnode.reality]+= mp*rsnode.strength
+                    #print(ddo.printddo())
                 except KeyError:
-                    rnlist.update({rsnode.reality:mp*rsnode.percent*math.log10(ddo.netpatemp)})
-                    print(ddo.printddo())
+                    rnlist.update({rsnode.reality:mp*rsnode.strength})
+                    #print(ddo.printddo())
                     
             
                     
@@ -121,31 +138,37 @@ class DetectionRecognisationSystem(object):
 #             for el in finalrealitylist:
 #                 el[1] = el[1] / sum1
         
-        self.printinfo(finalrealitylist)
+        #self.printinfo(finalrealitylist)
         
         return(finalrealitylist, ddomatchlist)
     
     def printinfo(self,finalrealitylist):
+        print('---->')
         for el in finalrealitylist:
-            print('reality: ', el[0], 'match %: ', el[1])
+            print('reality: ', el[0], 'strength: ', el[1])
             
-    
+        print('<----')
+        
     def assignreality(self, ddomatchlist, reality, matchfunc):
-        for el in ddomatchlist:
-            mp = el[0]
-            ddo = el[1]
-            
-            for rsnode in ddo.RealityNodelist:
-                if(rsnode.match(reality)):
-                    if(rsnode.percent < mp):
-                        rsnode.percent = mp
-                    else:
-                        rsnode.percent = rsnode.percent - (mp - rsnode.percent)*self.G.matchadaptationfactor
+        
+        if(reality):
+            for el in ddomatchlist:
+                mp = el[0]
+                ddo = el[1]
                 
+                realitypresent = 0
+                for rsnode in ddo.RealityNodelist:
+                    if(rsnode.match(reality)):
+                        realitypresent = 1
+                        rsnode.strength += mp
+                        
+                    else:
+                        rsnode.strength -= mp
                     
-            if(reality):
-                rn = self.RealitySpeculator(mp, reality, matchfunc)
-                ddo.AddRealityNode(rn)
+                        
+                if(not realitypresent):
+                    rn = self.RealitySpeculator(mp, reality, matchfunc)
+                    ddo.AddRealityNode(rn)
             
             
                                      

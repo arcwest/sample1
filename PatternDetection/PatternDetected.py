@@ -77,8 +77,15 @@ class PatternDetected(object):
         for el in patlist:
             self.netpatemp += el.emp
             # link the pat to node for excitation
-            el.node.addrspatnode(el)
-                
+          
+        self.G.log('total pat: '+str(len(patlist)) + ' netemp: '+str(self.netpatemp), 1)      
+        if(len(patlist) > self.G.minNumOfPatNodeForToBeConsideredForBeingRs):
+            for el in patlist:
+                el.node.addrspatnode(el)
+        else:
+            patlist = []
+            
+            
         self.DDO = patlist
         
     
@@ -115,8 +122,9 @@ class PatternDetected(object):
         return(matchpercent)
     
     def printddo(self):
+        print(len(self.DDO))
         for el in self.DDO:
-            print('VL: ',el.vertlevel, 'HL: ',el.horlevel, 'R:', el.range, 'emp: ', el.emp)
+            print(' VL: ',el.vertlevel, ' HL: ',el.horlevel, 'Id: ', el.node.id, 'Idv: ', el.node.idv, 'R:', el.range, ' emp: ', el.emp, 'obj: ', print(el.node))
     
 class PatternClassifier:
     
@@ -128,7 +136,7 @@ class PatternClassifier:
         self.nodelist.update({node:0})
         
     def clearNodelist(self):
-        self.nodelist = [] 
+        self.nodelist = {}
         
     def formDDO(self):
         DDO = PatternDetected([], self)
