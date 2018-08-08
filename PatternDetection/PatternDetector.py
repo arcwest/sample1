@@ -119,7 +119,7 @@ class VerticalDetectorNode:
             
     def InsertHnode(self, inp):
         if(self.Hnode == None):
-            self.Hnode = HorizontalDetectorNode(self.G.minval, self.G.maxval, self.level, 0, 'O', self.id)
+            self.Hnode = HorizontalDetectorNode(self.level, 0, self.id)
             self.Hnode.setmarker(self.markerfunc)
             
         

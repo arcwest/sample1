@@ -93,7 +93,7 @@ class PatternDetected(object):
     def formpatnode(self,node):
         pat = None
         if(node.vert == 0): #horizontal nodes
-            pat = self.PatNode(node.vertlevel, node.level, node.Range, self)
+            pat = self.PatNode(node.vertlevel,0, node.Range, self)
             #node.addrspatnode(pat)
             pat.node = node
         return(pat)
